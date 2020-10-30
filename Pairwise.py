@@ -1,10 +1,23 @@
 import numpy as np
 
 def main():
-    paired = PairwiseAlignment("AGC", "AAAC")
+    # Open both genome fasta files
+    # M-SARS: https://www.ncbi.nlm.nih.gov/nuccore/NC_004718.3?from=26398&to=27063&report=fasta
+    # M-COVID: https://www.ncbi.nlm.nih.gov/nuccore/NC_045512.2?from=26523&to=27191&report=fasta
+    sarsfile = open('M-SARS.fasta', 'r')
+    covidfile = open('M-COVID.fasta', 'r')
+    # Skip the comment line
+    sarsfile.readline()
+    covidfile.readline()
+    # Read files into strings
+    msars = sarsfile.read()
+    mcovid = covidfile.read()
+    # Remove new line characters
+    msars = msars.replace('\n', '')
+    mcovid = mcovid.replace('\n', '')
+    # Pairwise align both M gene sequences
+    paired = PairwiseAlignment(msars, mcovid)
     print(paired)
-    # print(scr[:,:,0])
-    # print(scr[:,:,1])
 
 # Pairwise alignment function
 def PairwiseAlignment(dna1, dna2):
@@ -69,6 +82,9 @@ def PairwiseAlignment(dna1, dna2):
             strand2.insert(0, dna2nuc.pop())
             xstart = xstart - 1
             ystart = ystart - 1           
+
+    # print(scores[:,:,0])
+    # print(scores[:,:,1])
 
     return ["".join(strand1), "".join(strand2)]
 
