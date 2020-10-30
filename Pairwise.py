@@ -1,10 +1,10 @@
 import numpy as np
 
 def main():
-    print("Hello world!")
-    scr = PairwiseAlignment("AGC", "AAAC")
-    print(scr[:,:,0])
-    print(scr[:,:,1])
+    paired = PairwiseAlignment("AGC", "AAAC")
+    print(paired)
+    # print(scr[:,:,0])
+    # print(scr[:,:,1])
 
 # Pairwise alignment function
 def PairwiseAlignment(dna1, dna2):
@@ -45,7 +45,32 @@ def PairwiseAlignment(dna1, dna2):
                         
                     scores[x, y, 0] = maxscore
                     scores[x, y, 1] = dir
-    return scores
+
+    xstart = len(dna1) 
+    ystart = len(dna2)
+    dna1nuc = []
+    dna1nuc[:] = dna1
+    dna2nuc = []
+    dna2nuc[:] = dna2
+    strand1 = []
+    strand2 = []
+
+    while xstart > 0:
+        if scores[xstart, ystart, 1] == 1:
+            strand1.insert(0, "_")
+            strand2.insert(0, dna2nuc.pop())
+            ystart = ystart - 1
+        elif scores[xstart, ystart, 1] == 2:
+            strand1.insert(0, dna1nuc.pop())
+            strand2.insert(0, "_")
+            xstart = xstart - 1
+        else:
+            strand1.insert(0, dna1nuc.pop())
+            strand2.insert(0, dna2nuc.pop())
+            xstart = xstart - 1
+            ystart = ystart - 1           
+
+    return ["".join(strand1), "".join(strand2)]
 
 # Define entry point
 if __name__ == "__main__":
