@@ -16,11 +16,11 @@ def main():
     msars = msars.replace('\n', '')
     mcovid = mcovid.replace('\n', '')
     # Pairwise align both M gene sequences
-    paired = PairwiseAlignment(msars, mcovid)
+    paired = PairwiseAlignment(msars, mcovid, [1, 0, -1])
     print(paired)
 
 # Pairwise alignment function
-def PairwiseAlignment(dna1, dna2):
+def PairwiseAlignment(dna1, dna2, scoring):
     scores = np.zeros(shape=(len(dna1) + 1, len(dna2) + 1, 2))
     for x in range(0, len(dna1) + 1):
         for y in range(0, len(dna2) + 1):
@@ -29,21 +29,21 @@ def PairwiseAlignment(dna1, dna2):
                     scores[x, y, 0] = 0
                     scores[x, y, 1] = 0
                 else:
-                    scores[x, y, 0] = scores[x, y-1, 0] - 2
+                    scores[x, y, 0] = scores[x, y-1, 0] + scoring[2]
                     scores[x, y, 1] = 1
             else:
                 if y == 0:
-                    scores[x, y, 0] = scores[x-1, y, 0] - 2
+                    scores[x, y, 0] = scores[x-1, y, 0] + scoring[2]
                     scores[x, y, 1] = 2
                 else:
-                    upscore = scores[x, y-1, 0] - 2
+                    upscore = scores[x, y-1, 0] + scoring[2]
                     leftscore = scores[x-1, y, 0] - 2
                     
                     score = 0
                     if dna1[x-1] == dna2[y-1]:
-                        score = 1
+                        score = scoring[0]
                     else:
-                        score = -1
+                        score = scoring[1]
                         
                     diagscore = scores[x-1,y-1, 0] + score
                     
