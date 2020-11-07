@@ -18,11 +18,18 @@ def main():
     mcovid = mcovid.replace('\n', '')
     # Pairwise align both M gene sequences
 
-    paired = PairwiseAlignment(msars, mcovid, [1, 0, -1])
-    print(paired)
+    for x in range (1, 4):
+        for y in range(-2, 1):
+            for z in range(-3, 0):
+                AlignAndScore(msars, mcovid, [x, y, z])
 
+def AlignAndScore(dna1, dna2, scoring):
+    paired = PairwiseAlignment(dna1, dna2, scoring)
+    # print(paired)
     alignscore = ScoreStrand(paired[0], paired[1])
+    print(scoring)
     print(alignscore)
+
 
 # Pairwise alignment function
 def PairwiseAlignment(dna1, dna2, scoring):
@@ -99,7 +106,8 @@ def ScoreStrand(sarsstrand, covidstrand):
         "NonsynCount": 0,
         "IndelCount": 0
     }
-    atgindexes = [m.start() for m in re.finditer('ATG', covidstrand)]
+
+    atgindex = covidstrand.find("ATG")
     
     protdict = { 
             'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M', 
@@ -120,77 +128,60 @@ def ScoreStrand(sarsstrand, covidstrand):
             'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W', 
         }
 
-    for indx in atgindexes:
-        strindx = indx
-        while True:
-            sarstrip = sarsstrand[strindx:(strindx + 3)]
-            covtrip = covidstrand[strindx:(strindx + 3)]
+    strindx = atgindex
+    while True:
+        triplen = 0
+        sarstrip = ''
+        covtrip = ''
 
-            if "_" not in covtrip:
-                if protdict[covtrip] == '_':
-                    break
+        while (len(covtrip) - covtrip.count('_')) < 3:
+            triplen = triplen + (3 - len(covtrip) + covtrip.count('_'))
+            sarstrip = sarsstrand[strindx:(strindx + triplen)]
+            covtrip = covidstrand[strindx:(strindx + triplen)]
 
-            tripscore = ScoreTriplet(sarstrip, covtrip)
-            score["SynCount"] = score["SynCount"] + tripscore["SynCount"]
-            score["NonsynCount"] = score["NonsynCount"] + tripscore["NonsynCount"]
-            score["IndelCount"] = score["IndelCount"] + tripscore["IndelCount"]
-            strindx = strindx + 3
+        covstripnogaps = covtrip.replace('_', '')
+
+        if protdict[covstripnogaps] == '_':
+            break
+
+        tripscore = ScoreTriplet(sarstrip, covtrip, protdict)
+        score["SynCount"] = score["SynCount"] + tripscore["SynCount"]
+        score["NonsynCount"] = score["NonsynCount"] + tripscore["NonsynCount"]
+        score["IndelCount"] = score["IndelCount"] + tripscore["IndelCount"]
+        strindx = strindx + triplen
 
     return score
 
-def ScoreTriplet(sarstriplet, covidtriplet):
+def ScoreTriplet(sarstriplet, covidtriplet, protdict):
     score = {
         "SynCount": 0,
         "NonsynCount": 0,
         "IndelCount": 0
     }
     if "_" in covidtriplet:
-        gapindexes = [i for i, ltr in enumerate(covidtriplet) if ltr == "_"]
-        if len(gapindexes) == 3:
-            score["IndelCount"] = 1
-        elif len(gapindexes) == 1:
-            score["IndelCount"] = 1
-        else:
-            if 1 in gapindexes:
-                score["IndelCount"] = 1
-            else:
-                score["IndelCount"] = 2
+        score["IndelCount"] = IndelCount(covidtriplet)
     elif "_" in sarstriplet:
-        gapindexes = [i for i, ltr in enumerate(sarstriplet) if ltr == "_"]
-        if len(gapindexes) == 3:
-            score["IndelCount"] = 1
-        elif len(gapindexes) == 1:
-            score["IndelCount"] = 1
-        else:
-            if 1 in gapindexes:
-                score["IndelCount"] = 1
-            else:
-                score["IndelCount"] = 2
-    elif sarstriplet != covidtriplet:
-        protdict = { 
-            'ATA':'I', 'ATC':'I', 'ATT':'I', 'ATG':'M', 
-            'ACA':'T', 'ACC':'T', 'ACG':'T', 'ACT':'T', 
-            'AAC':'N', 'AAT':'N', 'AAA':'K', 'AAG':'K', 
-            'AGC':'S', 'AGT':'S', 'AGA':'R', 'AGG':'R',                  
-            'CTA':'L', 'CTC':'L', 'CTG':'L', 'CTT':'L', 
-            'CCA':'P', 'CCC':'P', 'CCG':'P', 'CCT':'P', 
-            'CAC':'H', 'CAT':'H', 'CAA':'Q', 'CAG':'Q', 
-            'CGA':'R', 'CGC':'R', 'CGG':'R', 'CGT':'R', 
-            'GTA':'V', 'GTC':'V', 'GTG':'V', 'GTT':'V', 
-            'GCA':'A', 'GCC':'A', 'GCG':'A', 'GCT':'A', 
-            'GAC':'D', 'GAT':'D', 'GAA':'E', 'GAG':'E', 
-            'GGA':'G', 'GGC':'G', 'GGG':'G', 'GGT':'G', 
-            'TCA':'S', 'TCC':'S', 'TCG':'S', 'TCT':'S', 
-            'TTC':'F', 'TTT':'F', 'TTA':'L', 'TTG':'L', 
-            'TAC':'Y', 'TAT':'Y', 'TAA':'_', 'TAG':'_', 
-            'TGC':'C', 'TGT':'C', 'TGA':'_', 'TGG':'W', 
-        } 
+        score["IndelCount"] = IndelCount(sarstriplet)
+    elif sarstriplet != covidtriplet: 
         if protdict[sarstriplet] != protdict[covidtriplet]:
             score["SynCount"] = 1
         else:
             score["NonsynCount"] = 1
 
     return score
+
+def IndelCount(strand):
+    indels = 0
+    prevchargap = False
+    for char in strand:
+        if char == '_':
+            if prevchargap == False:
+                indels = indels + 1
+                prevchargap = True
+        else:
+            prevchargap = False
+
+    return indels
 
 # Define entry point
 if __name__ == "__main__":
