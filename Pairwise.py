@@ -25,7 +25,7 @@ def main():
 
 def AlignAndScore(dna1, dna2, scoring):
     paired = PairwiseAlignment(dna1, dna2, scoring)
-    # print(paired)
+    print(paired)
     alignscore = ScoreStrand(paired[0], paired[1])
     print(scoring)
     print(alignscore)
@@ -93,10 +93,7 @@ def PairwiseAlignment(dna1, dna2, scoring):
             strand1.insert(0, dna1nuc.pop())
             strand2.insert(0, dna2nuc.pop())
             xstart = xstart - 1
-            ystart = ystart - 1           
-
-    # print(scores[:,:,0])
-    # print(scores[:,:,1])
+            ystart = ystart - 1
 
     return ["".join(strand1), "".join(strand2)]
 
