@@ -18,10 +18,19 @@ def main():
     mcovid = mcovid.replace('\n', '')
     # Pairwise align both M gene sequences
 
-    for x in range (1, 4):
-        for y in range(-2, 1):
-            for z in range(-3, 0):
-                AlignAndScore(msars, mcovid, [x, y, z])
+    #for x in range (1, 4):
+    #    for y in range(-2, 1):
+    #        for z in range(-3, 0):
+    #            AlignAndScore(msars, mcovid, [x, y, z])
+
+    AlignAndScore(msars, mcovid, [1, 0, -1])
+
+    # Read BLAST file into string and pass to parser
+    blastfile = open('blast_results.txt', 'r')
+    blastpair = ParseBLASTFile(blastfile.read())
+    print(blastpair)
+    blastscore = ScoreStrand(blastpair[0], blastpair[1])
+    print(blastscore)
 
 def AlignAndScore(dna1, dna2, scoring):
     paired = PairwiseAlignment(dna1, dna2, scoring)
@@ -179,6 +188,34 @@ def IndelCount(strand):
             prevchargap = False
 
     return indels
+
+def ParseBLASTFile(blaststr):
+    str1 = ''
+    str2 = ''
+    endpos = 0
+    startpos = 12 # Column that all sequences start at in file
+
+    # Split the string into a list at new lines
+    strlist = blaststr.splitlines()
+    
+    for x in strlist:
+        if x.startswith('Query'):
+            for i in range(startpos, len(x)):
+                if x[i].isdigit():
+                    endpos = i - 2
+                    break
+            x = x.replace('-', '_')
+            str1 = str1 + x[startpos:endpos]
+
+        elif x.startswith('Sbjct'):
+            for i in range(startpos, len(x)):
+                if x[i].isdigit():
+                    endpos = i - 2
+                    break
+            x = x.replace('-', '_')
+            str2 = str2 + x[startpos:endpos]
+
+    return (str1, str2)
 
 # Define entry point
 if __name__ == "__main__":
