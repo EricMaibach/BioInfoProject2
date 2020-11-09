@@ -18,18 +18,18 @@ def main():
     mcovid = mcovid.replace('\n', '')
     # Pairwise align both M gene sequences
 
-    #for x in range (1, 4):
+    # for x in range (1, 4):
     #    for y in range(-2, 1):
     #        for z in range(-3, 0):
     #            AlignAndScore(msars, mcovid, [x, y, z])
 
-    AlignAndScore(msars, mcovid, [1, 0, -1])
+    AlignAndScore(msars, mcovid, [1, 0, -2])
 
     # Read BLAST file into string and pass to parser
     blastfile = open('blast_results.txt', 'r')
     blastpair = ParseBLASTFile(blastfile.read())
     print(blastpair)
-    blastscore = ScoreStrand(blastpair[0], blastpair[1])
+    blastscore = ScoreStrand(blastpair[1], blastpair[0])
     print(blastscore)
 
 def AlignAndScore(dna1, dna2, scoring):
@@ -110,7 +110,9 @@ def ScoreStrand(sarsstrand, covidstrand):
     score = {
         "SynCount": 0,
         "NonsynCount": 0,
-        "IndelCount": 0
+        "IndelCount": 0,
+        "MutationCount": 0,
+        "TripletCount": 0
     }
 
     atgindex = covidstrand.find("ATG")
@@ -154,6 +156,8 @@ def ScoreStrand(sarsstrand, covidstrand):
         score["SynCount"] = score["SynCount"] + tripscore["SynCount"]
         score["NonsynCount"] = score["NonsynCount"] + tripscore["NonsynCount"]
         score["IndelCount"] = score["IndelCount"] + tripscore["IndelCount"]
+        score["MutationCount"] = score["MutationCount"] + tripscore["MutationCount"]
+        score["TripletCount"] = score["TripletCount"] + tripscore["TripletCount"]
         strindx = strindx + triplen
 
     return score
@@ -162,18 +166,25 @@ def ScoreTriplet(sarstriplet, covidtriplet, protdict):
     score = {
         "SynCount": 0,
         "NonsynCount": 0,
-        "IndelCount": 0
+        "IndelCount": 0,
+        "MutationCount": 0,
+        "TripletCount": 0
     }
     if "_" in covidtriplet:
         score["IndelCount"] = IndelCount(covidtriplet)
+        score["MutationCount"] = 1
     elif "_" in sarstriplet:
         score["IndelCount"] = IndelCount(sarstriplet)
+        score["MutationCount"] = 1
     elif sarstriplet != covidtriplet: 
         if protdict[sarstriplet] != protdict[covidtriplet]:
             score["SynCount"] = 1
+            score["MutationCount"] = 1
         else:
             score["NonsynCount"] = 1
+            score["MutationCount"] = 1
 
+    score["TripletCount"] = 1
     return score
 
 def IndelCount(strand):
